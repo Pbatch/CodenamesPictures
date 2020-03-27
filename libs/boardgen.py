@@ -6,14 +6,14 @@ class Boardgen:
     """
     Generate a random board
     """
-    def __init__(self, in_file):
+    def __init__(self, path):
         """
         Parameters
         ----------
-        in_file: str
-            The path to the possible image ids
+        path: str
+            The path to the possible urls
         """
-        self.in_file = in_file
+        self.path = path
         self.board = self.generate_board()
 
     def generate_board(self):
@@ -21,11 +21,12 @@ class Boardgen:
         Create a game board
         """
         try:
-            all_urls = [word.strip().lower() for word in open(self.in_file)]
+            d = np.load(self.path, allow_pickle=True).item()
+            all_urls = list(d.keys())
         except UnicodeDecodeError:
-            raise Exception("Make sure that in_file is a text file")
+            raise Exception("Make sure that the path is a text file")
         except FileNotFoundError:
-            raise Exception("Make sure that in_file exists")
+            raise Exception("Make sure that the path exists")
 
         permutation = np.random.permutation(len(all_urls))
         urls = np.array(all_urls)[permutation][:25]
@@ -35,17 +36,13 @@ class Boardgen:
         for i, url in enumerate(urls):
             if i < 9:
                 type = "blue"
-                colour = "#0080FF"
             elif i < 17:
                 type = "red"
-                colour = "#FF0000"
             elif i < 24:
                 type = "neutral"
-                colour = "#D0D0D0"
             else:
                 type = "assassin"
-                colour = "#202020"
-            picture = {"url": url, "type": type, "colour": colour, "active": False}
+            picture = {"url": url, "type": type, "active": False}
             board.append(picture)
 
         np.random.shuffle(board)
@@ -58,11 +55,10 @@ class Boardgen:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Create a Codenames board from a set of words')
-    parser.add_argument('codenames_words', type=str,
-                        help='The file location of Codenames words')
+    parser = argparse.ArgumentParser(description='Create a Picture Codenames board')
+    parser.add_argument('path', type=str, help='The location of the dictionary')
     args = parser.parse_args()
-    board = Boardgen(args.codenames_words).board
+    board = Boardgen(args.path).board
     print(board)
 
 

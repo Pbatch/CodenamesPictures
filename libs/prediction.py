@@ -1,62 +1,36 @@
-import gensim
 from itertools import combinations, chain
 import argparse
-import pickle
-
-
-def load_model(in_file):
-    """
-    Load a pretrained model
-    """
-    model = gensim.models.KeyedVectors.load(in_file, mmap="r")
-    return model
+from boardgen import Boardgen
+import numpy as np
+from scipy.spatial.distance import cdist
+from scipy.optimize import linear_sum_assignment
 
 
 class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, models, vocab_path, target, invalid_guesses):
+    def __init__(self, board, path, target, invalid_guesses):
         """
         Parameters
         ----------
         board: json
             The current board state
-        models: list
-            The word2vec models used to compute word distances
-        vocab_path: str
-            The path to the vocabulary
+        path: str
+            The path to the dictionary; the keys are urls and the values are vectors
         target: int
-            The number of words to try and link
+            The number of pictures to try and link
         invalid_guesses: set
-            Clues which have already been given
+            Urls which have already been given as clues
         """
-        self.models = models
-        self.target = target
-        self.vocab_path = vocab_path
         self.board = board
+        self.path = path
+        self.target = target
         self.invalid_guesses = invalid_guesses
 
-        self.words = self.get_words()
-        self.all_words = self.get_all_words()
         self.blue, self.red, self.neutral, self.assassin = self.get_types()
-
         self.pairwise_scores = self.calculate_pairwise_scores()
         self.valid_guesses = self.get_valid_guesses()
-
-    def get_words(self):
-        """
-        Extract the words from the inactive cards
-        """
-        words = [card["name"].replace(" ", "") for card in self.board if not card["active"]]
-        return words
-
-    def get_all_words(self):
-        """
-        Extract the words from every card
-        """
-        all_words = [card["name"].replace(" ", "") for card in self.board]
-        return all_words
 
     def get_types(self):
         """
@@ -66,43 +40,33 @@ class Predictor:
         red = []
         neutral = []
         assassin = ""
-        for card in self.board:
-            name = card["name"].replace(" ", "")
-            if card["type"] == "blue" and not card["active"]:
-                blue.append(name)
-            if card["type"] == "red" and not card["active"]:
-                red.append(name)
-            if card["type"] == "neutral" and not card["active"]:
-                neutral.append(name)
-            if card["type"] == "assassin" and not card["active"]:
-                assassin = name
+        for picture in self.board:
+            url = picture["url"].replace(" ", "")
+            if picture["type"] == "blue" and not picture["active"]:
+                blue.append(url)
+            if picture["type"] == "red" and not picture["active"]:
+                red.append(url)
+            if picture["type"] == "neutral" and not picture["active"]:
+                neutral.append(url)
+            if picture["type"] == "assassin" and not picture["active"]:
+                assassin = url
         return blue, red, neutral, assassin
 
     def get_valid_guesses(self):
         """
         Get the relevant valid guesses
         """
-        with open(self.vocab_path, "rb") as f:
-            top_words_dictionary = pickle.load(f)
-        potential_guesses = set(chain.from_iterable(top_words_dictionary[w] for w in self.blue))
+        d = np.load(self.path, allow_pickle=True).item()
+        potential_guesses = set(chain.from_iterable(d[url] for url in self.blue))
         valid_guesses = potential_guesses.difference(self.invalid_guesses)
 
         return valid_guesses
 
-    def similarity(self, first_word, second_word):
-        """
-        Determine how similar two words are
-        """
-        total_score = 0
-        for model in self.models:
-            try:
-                score = model.similarity(first_word, second_word)
-                if score >= 0.4:
-                    total_score += score
-            except KeyError:
-                pass
-
-        return total_score
+    def earthmover(self, u, v):
+        dist_matrix = cdist(u, v, metric='cosine')
+        assignment = linear_sum_assignment(dist_matrix)
+        score = np.mean(dist_matrix[assignment])
+        return score
 
     def calculate_pairwise_scores(self):
         """
@@ -112,7 +76,8 @@ class Predictor:
         """
         pairwise_scores = {}
         for pair in combinations(self.blue, 2):
-            pairwise_scores[pair] = self.similarity(pair[0], pair[1])
+            u, v = self.ve
+            pairwise_scores[pair] = self.earthmover(pair[0], pair[1])
         return pairwise_scores
 
     def guess_score(self, guess):
@@ -164,26 +129,11 @@ class Predictor:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Create a Codenames board.'
-                                                 'Generate potential guesses for both teams.')
-    parser.add_argument('codenames_words', type=str,
-                        help='The file location of Codenames words')
-    parser.add_argument('training_vectors', type=str,
-                        help='The file location of the pretrained model')
+    parser = argparse.ArgumentParser(description='Create a Picture Codenames board')
+    parser.add_argument('path', type=str, help='The location of the dictionary')
     args = parser.parse_args()
-
-    model = load_model(args.training_vectors)
-    for word in open("../static/codenames_words"):
-        w = word.strip("\n").replace(" ", "")
-        if w not in model.vocab:
-            print(w)
-
-    with open("../static/top_words", "rb") as f:
-        top_words_dict = pickle.load(f)
-
-    for w in set(chain.from_iterable(top_words_dict.values())):
-        if w not in model.vocab:
-            print(w)
+    board = Boardgen(args.path).board
+    predictor = Predictor(board, args.path, 2, {})
 
 
 if __name__ == "__main__":

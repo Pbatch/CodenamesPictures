@@ -5,9 +5,9 @@ function sleep(ms) {
 
 $(document).ready(function(){
 
-  //Disable the clue, card and end turn buttons
+  //Disable the clue, picture and end turn buttons
   function disable_buttons(){
-    $('.card').css('pointer-events', 'none');
+    $('.picture').css('pointer-events', 'none');
     $('#end_turn').css('pointer-events', 'none');
     $('.clue_button').css('pointer-events', 'none');
     $('.switch').css('pointer-events', 'none');
@@ -20,7 +20,7 @@ $(document).ready(function(){
 
     //Activate relevant buttons
     disable_buttons();
-    $('.card').css('pointer-events', 'auto');
+    $('.picture').css('pointer-events', 'auto');
     $('#end_turn').css('pointer-events', 'auto');
     $('.switch').css('pointer-events', 'auto');
   }
@@ -35,8 +35,8 @@ $(document).ready(function(){
     $('.clue_button').css('pointer-events', 'auto');
   }
 
-  //Update card borders
-  function update_card_borders(check) {
+  //Update picture borders
+  function update_picture_borders(check) {
     if (check == true) {
       var outline_style = "dashed";
     }
@@ -50,10 +50,10 @@ $(document).ready(function(){
     }
   }
 
-  //Update card
-  function update_card(id) {
+  //Update picture
+  function update_picture(id) {
 
-    //Set the card to active
+    //Set the picture to active
     board[id].active = true;
 
     //Change its colour
@@ -93,10 +93,10 @@ $(document).ready(function(){
       //Disable all buttons
       disable_buttons();
 
-      //Reveal the cards
+      //Reveal the pictures
       for (i = 1; i < 26; i++) {
         if (board[i].active == false) {
-            update_card(i);
+            update_picture(i);
         }
       }
     }
@@ -106,11 +106,7 @@ $(document).ready(function(){
   //Computer turn
   function computer_turn() {
     //Remove old cheat borders
-    update_card_borders(false);
-
-    //Removed sleep functionality
-    //Update title
-    //$('#turn_text').html("Opponent's turn");
+    update_picture_borders(false);
 
     //Update clue text
     $("#clue_text").html(`Clue: `)
@@ -131,9 +127,7 @@ $(document).ready(function(){
          //Apply the sequence
          var sequence_length = sequence.length;
          for (i = 0; i < sequence_length; i++) {
-            //Removed sleep functionality
-            //await sleep(250);
-            update_card(sequence[i]);
+            update_picture(sequence[i]);
             var check = check_end();
             if (check == true) {
                 break;
@@ -183,19 +177,19 @@ $(document).ready(function(){
   */
 
   //Card behaviour
-  $('.card').click(function() {
-     //Get the id of the card
+  $('.picture').click(function() {
+     //Get the id of the picture
      var id = $(this).attr('id');
 
      if (board[id].active == false) {
         // Remove a guess
         remaining_guesses -= 1;
 
-        //Update the clicked card
-        update_card(id);
+        //Update the clicked picture
+        update_picture(id);
         check_end();
 
-        // It's the computers turn if we have no guesses or if we choose a bad card
+        // It's the computers turn if we have no guesses or if we choose a bad picture
         if (remaining_guesses == 0 || board[id].type != "blue") {
             computer_turn();
         }
@@ -244,8 +238,8 @@ $(document).ready(function(){
             //Update clue and target
             $("#clue_text").html(`Clue: ${clue} (${board[0].target})`)
 
-            //Update borders of relevant cards
-            update_card_borders(cheat);
+            //Update borders of relevant pictures
+            update_picture_borders(cheat);
 
             //Go to make_guess function
             make_guess();
@@ -271,6 +265,6 @@ $(document).ready(function(){
   //Cheat button behaviour
   $("#cheat").click(function(){
     cheat = this.checked;
-    update_card_borders(cheat);
+    update_picture_borders(cheat);
   });
 });
