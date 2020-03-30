@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import sys
 import json
 sys.path.insert(0, 'libs')
-import boardgen
+from utils import generate_board
 import prediction
 import computer
 app = Flask(__name__)
@@ -14,10 +14,12 @@ def index():
     Homepage for the website.
     Create a random board.
     """
-    board = boardgen.Boardgen("static/data/urls.txt").board
+    path = "static/data/urls.txt"
+    board = generate_board(path)
+    invalid_guesses = [picture['url'] for picture in board]
     board.insert(0, {"target": -1,
                      "difficulty": "easy",
-                     "invalid_guesses": []
+                     "invalid_guesses": set(invalid_guesses),
                      })
     return render_template('html/page.html', board=board)
 

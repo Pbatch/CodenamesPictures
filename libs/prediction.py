@@ -1,139 +1,146 @@
-from itertools import combinations, chain
-import argparse
-from boardgen import Boardgen
+from utils import generate_board, ctimer
 import numpy as np
+from numba import njit
 from scipy.spatial.distance import cdist
-from scipy.optimize import linear_sum_assignment
+from lapsolver import solve_dense
+import matplotlib.pyplot as plt
+from skimage.io import imread
+from tqdm import tqdm
 
 
 class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, path, target, invalid_guesses):
+    def __init__(self, board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8, phi=1):
         """
         Parameters
         ----------
         board: json
             The current board state
-        path: str
-            The path to the dictionary; the keys are urls and the values are vectors
-        target: int
-            The number of pictures to try and link
+        url_to_vec_path: str
+            The path to the url_to_vec dictionary
+        pair_to_dist_path: str
+            The path to the pair_to_dist dictionary
         invalid_guesses: set
-            Urls which have already been given as clues
+            Guesses which can't be used
+        alpha: float
+            The decay factor for the blue team
+        beta: float
+            The decay factor for the red team
+        gamma: float
+            The decay factor for the neutral team
+        phi: float
+            The decay factor for the assassin
         """
         self.board = board
-        self.path = path
-        self.target = target
-        self.invalid_guesses = invalid_guesses
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.phi = phi
 
-        self.blue, self.red, self.neutral, self.assassin = self.get_types()
-        self.pairwise_scores = self.calculate_pairwise_scores()
-        self.valid_guesses = self.get_valid_guesses()
+        self.url_to_vec = np.load(url_to_vec_path, allow_pickle=True).item()
+        self.pair_to_dist = np.load(pair_to_dist_path, allow_pickle=True)
+        self.valid_guesses = list(set(self.url_to_vec.keys()).difference(invalid_guesses))
 
-    def get_types(self):
-        """
-        Extract the types from the cards
-        """
-        blue = []
-        red = []
-        neutral = []
-        assassin = ""
-        for picture in self.board:
-            url = picture["url"].replace(" ", "")
-            if picture["type"] == "blue" and not picture["active"]:
-                blue.append(url)
-            if picture["type"] == "red" and not picture["active"]:
-                red.append(url)
-            if picture["type"] == "neutral" and not picture["active"]:
-                neutral.append(url)
-            if picture["type"] == "assassin" and not picture["active"]:
-                assassin = url
-        return blue, red, neutral, assassin
-
-    def get_valid_guesses(self):
-        """
-        Get the relevant valid guesses
-        """
-        d = np.load(self.path, allow_pickle=True).item()
-        potential_guesses = set(chain.from_iterable(d[url] for url in self.blue))
-        valid_guesses = potential_guesses.difference(self.invalid_guesses)
-
-        return valid_guesses
+    @staticmethod
+    @njit(fastmath=True)
+    def calculate_dist_matrix(u, v, d):
+        mat = np.zeros(shape=(u.shape[0], v.shape[0]), dtype=np.float32)
+        for i in range(u.shape[0]):
+            for j in range(v.shape[0]):
+                mat[i][j] = d[u[i]][v[j]]
+        return mat
 
     def earthmover(self, u, v):
-        dist_matrix = cdist(u, v, metric='cosine')
-        assignment = linear_sum_assignment(dist_matrix)
+        dist_matrix = self.calculate_dist_matrix(u, v, self.pair_to_dist)
+        assignment = solve_dense(dist_matrix)
         score = np.mean(dist_matrix[assignment])
         return score
-
-    def calculate_pairwise_scores(self):
-        """
-        Generate the pairwise scores
-
-        This dictionary will save unnecessary computation time later on
-        """
-        pairwise_scores = {}
-        for pair in combinations(self.blue, 2):
-            u, v = self.ve
-            pairwise_scores[pair] = self.earthmover(pair[0], pair[1])
-        return pairwise_scores
 
     def guess_score(self, guess):
         """
         Generate a score for a guess
-
-        The first component is the number of relevant red + neutral + assassin words
-        The second component is the number of relevant blue words
-        The final component is a measure of how well the clue and the relevant blue words link
         """
+        blue, red, neutral = 1, 1, 1
 
-        if guess in self.words:
-            return [[float('-inf'), float('-inf'), float('-inf')], guess, []]
+        em_scores = []
+        u = self.url_to_vec[guess]
+        for picture in self.board:
+            v = self.url_to_vec[picture['url']]
+            # A bigger em score means a better connection
+            em_scores.append(np.exp(-self.earthmover(u, v)))
 
-        score = [0, 0, 0]
+        # Sort the scores in descending order
+        sorted_idx = np.argsort(-np.array(em_scores))
+        score = 0
+        for i in sorted_idx:
+            if self.board[i]['type'] == 'blue':
+                delta = (self.alpha**blue)*em_scores[i]
+                blue += 1
+            elif self.board[i]['type'] == 'red':
+                delta = -(self.beta**red)*em_scores[i]
+                red += 1
+            elif self.board[i]['type'] == 'neutral':
+                delta = -(self.gamma**neutral)*em_scores[i]
+                neutral += 1
+            else:
+                delta = -self.phi*em_scores[i]
 
-        bad_similarities = [(w, self.similarity(guess, w)) for w in self.red + self.neutral + [self.assassin]]
-        relevant_bad_words = [w for w, s in bad_similarities if s != 0]
+            score += delta
+            em_scores[i] = delta
 
-        score[0] = -len(relevant_bad_words)
+        return score, em_scores
 
-        blue_similarities = [(w, self.similarity(guess, w)) for w in self.blue]
-        relevant_blue_words = {w: s for w, s in blue_similarities if s != 0}
-
-        score[1] = min(self.target, len(relevant_blue_words))
-
-        target_blue = []
-        for blue_words in combinations(relevant_blue_words.keys(), score[1]):
-            pairs = combinations(blue_words, 2)
-            cluster_score = sum(self.pairwise_scores[(a, b)] for a, b in pairs)
-            guess_score = sum(relevant_blue_words[w] for w in blue_words)
-            total_score = cluster_score + guess_score
-            if total_score >= score[2]:
-                target_blue = blue_words
-                score[2] = total_score
-
-        target_blue = [self.all_words.index(w)+1 for w in target_blue]
-
-        return score, guess, target_blue
-
-    def get_best_guess_and_score(self):
+    def get_best_guess_and_scores(self):
         """
-        Get the best guess and its score
+        Get the best guess and its scores
         """
-        guess_scores = (self.guess_score(g) for g in self.valid_guesses)
-        best_score, best_guess, target_blue = max(guess_scores, key=lambda x: x[0])
+        best_guess = ''
+        best_em_scores = []
+        best_score = -float('inf')
+        for guess in tqdm(self.valid_guesses):
+            score, em_scores = self.guess_score(guess)
+            if score > best_score:
+                best_guess = guess
+                best_em_scores = em_scores
+                best_score = score
 
-        return best_score, best_guess, target_blue
+        return best_guess, best_em_scores, best_score
+
+    def display_board(self, best_guess, best_em_scores, shape=(5, 5)):
+        urls = [picture['url'] for picture in self.board] + [best_guess]
+        fig, ax = plt.subplots(shape[0] + 1, shape[1], figsize=(24, 24))
+        for i in range(shape[0] + 1):
+            for j in range(shape[1]):
+                if i != shape[0]:
+                    idx = shape[0]*i + j
+                    image = imread(urls[idx])
+                    ax[i][j].set_title(f'Score:{best_em_scores[idx]:.3f}', size=8)
+                    ax[i][j].imshow(image)
+                elif j == shape[1]//2:
+                    image = imread(best_guess)
+                    ax[i][j].imshow(image)
+                ax[i][j].axis('off')
+        fig.subplots_adjust(hspace=0.4)
+        plt.show()
 
 
+@ctimer
 def main():
-    parser = argparse.ArgumentParser(description='Create a Picture Codenames board')
-    parser.add_argument('path', type=str, help='The location of the dictionary')
-    args = parser.parse_args()
-    board = Boardgen(args.path).board
-    predictor = Predictor(board, args.path, 2, {})
+    url_to_vec_path = '../static/data/url_to_vec.npy'
+    pair_to_dist_path = '../static/data/pair_to_dist.npy'
+    board = generate_board(url_to_vec_path)
+    invalid_guesses = set([picture['url'] for picture in board])
+    predictor = Predictor(board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.4, beta=0.0, gamma=0.0, phi=0.0)
+    best_guess, best_em_scores, best_score = predictor.get_best_guess_and_scores()
+
+    sorted_idx = np.argsort(-np.abs(np.array(best_em_scores)))
+    best_em_scores = np.array(best_em_scores)[sorted_idx]
+    board_types = np.array([b['type'] for b in board])[sorted_idx]
+    for t, s in zip(board_types, best_em_scores):
+        print(f'Type:{t} || Score:{s:.3f}')
+    predictor.display_board(best_guess, best_em_scores, shape=(5, 5))
 
 
 if __name__ == "__main__":
