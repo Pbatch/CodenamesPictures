@@ -3,7 +3,7 @@ import sys
 import json
 sys.path.insert(0, 'libs')
 from utils import generate_board
-import prediction
+from prediction import Predictor
 import computer
 app = Flask(__name__)
 
@@ -14,12 +14,12 @@ def index():
     Homepage for the website.
     Create a random board.
     """
-    path = "static/data/urls.txt"
+    path = "static/data/url_to_vec.npy"
     board = generate_board(path)
     invalid_guesses = [picture['url'] for picture in board]
     board.insert(0, {"target": -1,
                      "difficulty": "easy",
-                     "invalid_guesses": set(invalid_guesses),
+                     "invalid_guesses": invalid_guesses,
                      })
     return render_template('html/page.html', board=board)
 
@@ -51,16 +51,14 @@ def clue():
     Generate a clue
     """
     board = json.loads(request.data)
-    models = [prediction.load_model("static/data/{}_final".format(name)) for name in ["wiki"]]
+    url_to_vec_path = 'static/data/url_to_vec.npy'
+    pair_to_dist_path = 'static/data/pair_to_dist.npy'
+    invalid_guesses = set(board[0]['invalid_guesses'])
 
-    predictor = prediction.Predictor(board=board[1:],
-                                     models=models,
-                                     vocab_path="static/data/wiki_top_words",
-                                     target=board[0]["target"],
-                                     invalid_guesses=set(board[0]["invalid_guesses"]))
-
-    score, clue, target_blue = predictor.get_best_guess_and_score()
-    clue_details = jsonify(clue=clue, target_blue=target_blue)
+    predictor = Predictor(board[1:], url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.1, beta=0.0, gamma=0.0, phi=0.0)
+    clue, _, _ = predictor.get_best_guess_and_scores()
+    print(clue)
+    clue_details = jsonify(clue=clue)
 
     return clue_details
 

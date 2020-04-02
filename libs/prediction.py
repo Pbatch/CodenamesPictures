@@ -1,7 +1,6 @@
 from utils import generate_board, ctimer
 import numpy as np
 from numba import njit
-from scipy.spatial.distance import cdist
 from lapsolver import solve_dense
 import matplotlib.pyplot as plt
 from skimage.io import imread
@@ -52,10 +51,18 @@ class Predictor:
                 mat[i][j] = d[u[i]][v[j]]
         return mat
 
+    @staticmethod
+    @njit(fastmath=True)
+    def numba_mean(arr):
+        total = 0
+        for a in arr:
+            total += a
+        return total/arr.shape[0]
+
     def earthmover(self, u, v):
         dist_matrix = self.calculate_dist_matrix(u, v, self.pair_to_dist)
         assignment = solve_dense(dist_matrix)
-        score = np.mean(dist_matrix[assignment])
+        score = self.numba_mean(dist_matrix[assignment])
         return score
 
     def guess_score(self, guess):
@@ -64,51 +71,48 @@ class Predictor:
         """
         blue, red, neutral = 1, 1, 1
 
-        em_scores = []
+        distances = []
         u = self.url_to_vec[guess]
         for picture in self.board:
             v = self.url_to_vec[picture['url']]
-            # A bigger em score means a better connection
-            em_scores.append(np.exp(-self.earthmover(u, v)))
+            distances.append(self.earthmover(u, v))
 
-        # Sort the scores in descending order
-        sorted_idx = np.argsort(-np.array(em_scores))
+        sorted_idx = np.argsort(np.array(distances))
         score = 0
         for i in sorted_idx:
             if self.board[i]['type'] == 'blue':
-                delta = (self.alpha**blue)*em_scores[i]
+                delta = (self.alpha**blue)*np.exp(-distances[i])
                 blue += 1
             elif self.board[i]['type'] == 'red':
-                delta = -(self.beta**red)*em_scores[i]
+                delta = -(self.beta**red)*np.exp(-distances[i])
                 red += 1
             elif self.board[i]['type'] == 'neutral':
-                delta = -(self.gamma**neutral)*em_scores[i]
+                delta = -(self.gamma**neutral)*np.exp(-distances[i])
                 neutral += 1
             else:
-                delta = -self.phi*em_scores[i]
+                delta = -self.phi*np.exp(-distances[i])
 
             score += delta
-            em_scores[i] = delta
 
-        return score, em_scores
+        return score, distances
 
     def get_best_guess_and_scores(self):
         """
         Get the best guess and its scores
         """
         best_guess = ''
-        best_em_scores = []
+        best_distances = []
         best_score = -float('inf')
         for guess in tqdm(self.valid_guesses):
-            score, em_scores = self.guess_score(guess)
+            score, distances = self.guess_score(guess)
             if score > best_score:
                 best_guess = guess
-                best_em_scores = em_scores
+                best_distances = distances
                 best_score = score
 
-        return best_guess, best_em_scores, best_score
+        return best_guess, best_distances, best_score
 
-    def display_board(self, best_guess, best_em_scores, shape=(5, 5)):
+    def display_board(self, best_guess, best_distances, shape=(5, 5)):
         urls = [picture['url'] for picture in self.board] + [best_guess]
         fig, ax = plt.subplots(shape[0] + 1, shape[1], figsize=(24, 24))
         for i in range(shape[0] + 1):
@@ -116,7 +120,7 @@ class Predictor:
                 if i != shape[0]:
                     idx = shape[0]*i + j
                     image = imread(urls[idx])
-                    ax[i][j].set_title(f'Score:{best_em_scores[idx]:.3f}', size=8)
+                    ax[i][j].set_title(f'Distance:{best_distances[idx]:.3f}', size=8)
                     ax[i][j].imshow(image)
                 elif j == shape[1]//2:
                     image = imread(best_guess)
@@ -126,21 +130,19 @@ class Predictor:
         plt.show()
 
 
-@ctimer
+# @ctimer
 def main():
     url_to_vec_path = '../static/data/url_to_vec.npy'
     pair_to_dist_path = '../static/data/pair_to_dist.npy'
-    board = generate_board(url_to_vec_path)
+    board = generate_board(url_to_vec_path)[:9]
     invalid_guesses = set([picture['url'] for picture in board])
-    predictor = Predictor(board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.4, beta=0.0, gamma=0.0, phi=0.0)
-    best_guess, best_em_scores, best_score = predictor.get_best_guess_and_scores()
+    predictor = Predictor(board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.1, beta=0.0, gamma=0.0, phi=0.0)
+    best_guess, best_distances, best_score = predictor.get_best_guess_and_scores()
 
-    sorted_idx = np.argsort(-np.abs(np.array(best_em_scores)))
-    best_em_scores = np.array(best_em_scores)[sorted_idx]
-    board_types = np.array([b['type'] for b in board])[sorted_idx]
-    for t, s in zip(board_types, best_em_scores):
+    board_types = [b['type'] for b in board]
+    for t, s in zip(board_types, best_distances):
         print(f'Type:{t} || Score:{s:.3f}')
-    predictor.display_board(best_guess, best_em_scores, shape=(5, 5))
+    predictor.display_board(best_guess, best_distances, shape=(3, 3))
 
 
 if __name__ == "__main__":
