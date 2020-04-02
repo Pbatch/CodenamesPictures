@@ -8,56 +8,20 @@
       <link rel='stylesheet' type='text/css' href='{{ url_for('static', filename='css/board.css') }}'>
    </head>
    <body>
-      <div id = "application">
-         <div class = "wrapper" style="--split: 5;" id = "status">
-            <div class="symbol_button" id="reset">
-               <div class="symbol_button_text">Reset &#8634;</div>
-            </div>
-            <div id="remaining">
-               <span class="remaining_text" id="blue" style="--colour:blue">9</span>
-               &nbsp;–&nbsp;
-               <span class="remaining_text" id="red" style="--colour:red">8</span>
-            </div>
-            <div id="turn_text"></div>
-            <div></div>
-            <div class="symbol_button" id="end_turn">
-               <div class="symbol_button_text">End Turn</div>
+      <div id="application">
+         <div id="left">
+            <div id="clue">
+               PLACEHOLDER
             </div>
          </div>
-         <div class="wrapper" style="--split: 5;" id="board">
-            {% for picture in board[1:] %}
-               <img src="{{picture.url}}" id="{{picture.id}}" class="picture">
-            {% endfor %}
-         </div>
-      </div>
-      <div class="wrapper" style="--split: 5;" id = "footer">
-         <div id="radio">
-            <input type="radio" name="difficulty" value="easy" id="easy" checked="checked">
-            <label for="easy">easy</label>
-            <input type="radio" name="difficulty" value="medium" id="medium">
-            <label for="medium">medium</label>
-            <input type="radio" name="difficulty" value="hard" id="hard">
-            <label for="hard">hard</label>
-         </div>
-         {% if board[0]["target"] >= 1 %}
-            <div id="clue_text">Clue: {{board[0]["clue"]}} ({{board[0]["target"]}})</div>
-         {% else %}
-            <div id="clue_text">Clue: {{board[0]["clue"]}}</div>
-         {% endif %}
-         <div id="clue_wrapper">
-            {% for i in range(1, 4, 1) %}
-            <div class="clue_button" id = "clue_button{{i}}" data-target="{{i}}">{{i}}</div>
-            {% endfor %}
-         </div>
-         <div>
-            <label class="switch">
-               Cheat
-              <input type="checkbox" id="cheat">
-            </label>
-         </div>
-         <div class="symbol_button" id="instructions">
-            <div class="symbol_button_text">Instructions &#10068;</div>
-            <div id="dialog"></div>
+         <div id="right">
+            <div class="wrapper" style="--split: 5;">
+               {% for picture in board[1:] %}
+                  <div id="overlay{{picture.id}}">
+                     <img src="{{picture.url}}" id="{{picture.id}}" class="picture">
+                  </div>
+               {% endfor %}
+            </div>
          </div>
       </div>
    </body>
