@@ -10,13 +10,10 @@ $(document).ready(function(){
     //Set the picture to active
     board[id].active = true;
 
-    //Add the overlay
-    $("#overlay"+id).css({
-    "background-color": board[id].colour});
-
-    //Fade the image
+    //Change the opacity
     $("#"+id).css({
-    "opacity": 0.1});
+    "opacity": 0.1,
+    "pointer-events": "none"});
 
     //Decrement the appropriate count
     if (board[id].type == "blue") {

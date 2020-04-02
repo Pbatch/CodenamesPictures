@@ -1,6 +1,12 @@
 #left {
   width: 20%;
   float: left;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  font-size: 2em;
+  text-align: center;
+  font-family: arial;
+  height: 90px;
 }
 
 #right {
@@ -22,6 +28,13 @@ body {
  transition: transform .2s;
  margin-left: auto;
  margin-right: auto;
+ background-size:cover;
+}
+
+.remaining_text {
+    font-weight: bold;
+    font-family: Courier New;
+    color: var(--colour);
 }
 
 .picture:hover {
@@ -40,3 +53,7 @@ body {
   column-gap: 0px;
 }
 
+.left-container {
+  display: grid;
+  grid-template-rows: 100px 100px 100px;
+}
