@@ -47,13 +47,8 @@ $(document).ready(function(){
     //Set the picture to active
     board[id].active = true;
 
-    //Change the css of the picture
-    $("#"+id).css({
-    "opacity": 0.2,
-    "transition": "opacity 1s",
-    "pointer-events": "none"});
-
-    $('#'+id).removeClass('hover');
+    //Change the class of the picture
+    $("#"+id).toggleClass('active_picture picture')
 
     //Change the css of the frame
     $("#frame"+id).css({
