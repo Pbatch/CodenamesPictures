@@ -23,16 +23,16 @@ def generate_board(path):
     """
     try:
         d = np.load(path, allow_pickle=True).item()
-        all_urls = list(d.keys())
+        all_pic_ids = list(d.keys())
     except FileNotFoundError:
         raise Exception("Make sure that the path exists")
 
-    permutation = np.random.permutation(len(all_urls))
-    urls = np.array(all_urls)[permutation][:25]
+    permutation = np.random.permutation(len(all_pic_ids))
+    pic_ids = np.array(all_pic_ids)[permutation][:25]
 
     # 9 Blue, 8 Red, 7 Neutral, 1 Assassin
     board = []
-    for i, url in enumerate(urls):
+    for i, pic_id in enumerate(pic_ids):
         if i < 9:
             type = "blue"
             colour = "#0080FF"
@@ -45,7 +45,7 @@ def generate_board(path):
         else:
             type = "assassin"
             colour = "#202020"
-        picture = {"url": url, "type": type, "active": False, "colour": colour}
+        picture = {"pic_id": int(pic_id), "type": type, "active": False, "colour": colour}
         board.append(picture)
 
     np.random.shuffle(board)
@@ -58,7 +58,6 @@ def generate_board(path):
 
 
 if __name__ == "__main__":
-    path = '../static/data/url_to_vec.npy'
+    path = '../static/numpy/id_to_vec.npy'
     board = generate_board(path)
-    display_board(board)
     print(board)

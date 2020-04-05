@@ -34,7 +34,7 @@
             <div class="wrapper" style="--split: 5;">
                {% for picture in board[1:] %}
                   <div id="frame{{picture.id}}" class="frame">
-                     <img src="{{picture.url}}" id="{{picture.id}}" class="picture">
+                     <img src="static/pictures/{{picture.pic_id}}.jpg" id="{{picture.id}}" class="picture">
                   </div>
                {% endfor %}
             </div>

@@ -11,14 +11,14 @@ class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
+    def __init__(self, board, id_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
         """
         Parameters
         ----------
         board: json
             The current board state
-        url_to_vec_path: str
-            The path to the url_to_vec dictionary
+        id_to_vec_path: str
+            The path to the id_to_vec dictionary
         pair_to_dist_path: str
             The path to the pair_to_dist dictionary
         invalid_guesses: set
@@ -35,9 +35,9 @@ class Predictor:
         self.beta = beta
         self.gamma = gamma
 
-        self.url_to_vec = np.load(url_to_vec_path, allow_pickle=True).item()
+        self.id_to_vec = np.load(id_to_vec_path, allow_pickle=True).item()
         self.pair_to_dist = np.load(pair_to_dist_path, allow_pickle=True)
-        self.valid_guesses = list(set(self.url_to_vec.keys()).difference(invalid_guesses))
+        self.valid_guesses = list(set(self.id_to_vec.keys()).difference(invalid_guesses))
 
     @staticmethod
     @njit(fastmath=True)
@@ -69,9 +69,9 @@ class Predictor:
         blue, red, neutral = 0, 0, 0
 
         distances = []
-        u = self.url_to_vec[guess]
+        u = self.id_to_vec[guess]
         for picture in self.board:
-            v = self.url_to_vec[picture['url']]
+            v = self.id_to_vec[picture['pic_id']]
             distances.append(self.earthmover(u, v))
 
         sorted_idx = np.argsort(np.array(distances))
@@ -110,17 +110,19 @@ class Predictor:
         return best_guess, best_distances, best_score
 
     def display_board(self, best_guess, best_distances, shape=(5, 5)):
-        urls = [picture['url'] for picture in self.board] + [best_guess]
+        pic_ids = [picture['pic_id'] for picture in self.board] + [best_guess]
         fig, ax = plt.subplots(shape[0] + 1, shape[1], figsize=(24, 24))
         for i in range(shape[0] + 1):
             for j in range(shape[1]):
                 if i != shape[0]:
                     idx = shape[0]*i + j
-                    image = imread(urls[idx])
+                    path = f'../static/pictures/{pic_ids[idx]}.jpg'
+                    image = imread(path)
                     ax[i][j].set_title(f'Distance:{best_distances[idx]:.3f}', size=8)
                     ax[i][j].imshow(image)
                 elif j == shape[1]//2:
-                    image = imread(best_guess)
+                    path = f'../static/pictures/{best_guess}.jpg'
+                    image = imread(path)
                     ax[i][j].imshow(image)
                 ax[i][j].axis('off')
         fig.subplots_adjust(hspace=0.4)
@@ -129,11 +131,11 @@ class Predictor:
 
 # @ctimer
 def main():
-    url_to_vec_path = '../static/numpy/url_to_vec.npy'
+    id_to_vec_path = '../static/numpy/id_to_vec.npy'
     pair_to_dist_path = '../static/numpy/pair_to_dist.npy'
-    board = generate_board(url_to_vec_path)[:9]
-    invalid_guesses = set([picture['url'] for picture in board])
-    predictor = Predictor(board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.6, beta=0.1, gamma=0.1)
+    board = generate_board(id_to_vec_path)[:9]
+    invalid_guesses = set([picture['pic_id'] for picture in board])
+    predictor = Predictor(board, id_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.6, beta=0.1, gamma=0.1)
     best_guess, best_distances, best_score = predictor.get_best_guess_and_scores()
 
     board_types = [b['type'] for b in board]

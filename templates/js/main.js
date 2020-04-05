@@ -33,7 +33,7 @@ $(document).ready(function(){
           board[0]["invalid_guesses"].push(clue);
 
           //Load in the picture corresponding to the given clue
-          $("#clue").html(`<img src="${clue}" id="clue" class="picture">`)
+          $("#clue").html(`<img src="static/pictures/${clue}.jpg" id="clue" class="picture">`)
 
           //Enable the buttons
           change_buttons('auto');
@@ -49,9 +49,11 @@ $(document).ready(function(){
 
     //Change the css of the picture
     $("#"+id).css({
-    "opacity": 0.1,
+    "opacity": 0.2,
     "transition": "opacity 1s",
     "pointer-events": "none"});
+
+    $('#'+id).removeClass('hover');
 
     //Change the css of the frame
     $("#frame"+id).css({
