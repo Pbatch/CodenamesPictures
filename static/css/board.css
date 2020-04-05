@@ -28,7 +28,13 @@ body {
  transition: transform .2s;
  margin-left: auto;
  margin-right: auto;
- background-size:cover;
+}
+
+.frame{
+ display: block;
+ height: 90px;
+ margin-left: auto;
+ margin-right: auto;
 }
 
 .remaining_text {
@@ -55,5 +61,20 @@ body {
 
 .left-container {
   display: grid;
-  grid-template-rows: 100px 100px 100px;
+  grid-template-rows: repeat(4, 100px);
+}
+
+.symbol_button{
+    padding: 0 1.5em;
+}
+
+.symbol_button_text{
+    font-family: arial;
+    border-radius: 5px;
+    background-color: #F0F0F0;
+}
+
+.symbol_button_text:hover {
+  box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+  cursor: pointer;
 }

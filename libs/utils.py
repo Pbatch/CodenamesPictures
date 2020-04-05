@@ -35,13 +35,17 @@ def generate_board(path):
     for i, url in enumerate(urls):
         if i < 9:
             type = "blue"
+            colour = "#0080FF"
         elif i < 17:
             type = "red"
+            colour = "#FF0000"
         elif i < 24:
             type = "neutral"
+            colour = "#D0D0D0"
         else:
             type = "assassin"
-        picture = {"url": url, "type": type, "active": False}
+            colour = "#202020"
+        picture = {"url": url, "type": type, "active": False, "colour": colour}
         board.append(picture)
 
     np.random.shuffle(board)

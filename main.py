@@ -14,7 +14,7 @@ def index():
     Homepage for the website.
     Create a random board.
     """
-    path = "static/data/url_to_vec.npy"
+    path = "static/numpy/url_to_vec.npy"
     board = generate_board(path)
     invalid_guesses = [picture['url'] for picture in board]
     board.insert(0, {"target": -1,
@@ -51,11 +51,11 @@ def clue():
     Generate a clue
     """
     board = json.loads(request.data)
-    url_to_vec_path = 'static/data/url_to_vec.npy'
-    pair_to_dist_path = 'static/data/pair_to_dist.npy'
+    url_to_vec_path = 'static/numpy/url_to_vec.npy'
+    pair_to_dist_path = 'static/numpy/pair_to_dist.npy'
     invalid_guesses = set(board[0]['invalid_guesses'])
 
-    predictor = Predictor(board[1:], url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.1, beta=0.0, gamma=0.0, phi=0.0)
+    predictor = Predictor(board[1:], url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.7, beta=0.1, gamma=0.1)
     clue, _, _ = predictor.get_best_guess_and_scores()
     print(clue)
     clue_details = jsonify(clue=clue)

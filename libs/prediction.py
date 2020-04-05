@@ -11,7 +11,7 @@ class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8, phi=1):
+    def __init__(self, board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
         """
         Parameters
         ----------
@@ -29,14 +29,11 @@ class Predictor:
             The decay factor for the red team
         gamma: float
             The decay factor for the neutral team
-        phi: float
-            The decay factor for the assassin
         """
-        self.board = board
+        self.board = [p for p in board if not p['active']]
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
-        self.phi = phi
 
         self.url_to_vec = np.load(url_to_vec_path, allow_pickle=True).item()
         self.pair_to_dist = np.load(pair_to_dist_path, allow_pickle=True)
@@ -69,7 +66,7 @@ class Predictor:
         """
         Generate a score for a guess
         """
-        blue, red, neutral = 1, 1, 1
+        blue, red, neutral = 0, 0, 0
 
         distances = []
         u = self.url_to_vec[guess]
@@ -87,10 +84,10 @@ class Predictor:
                 delta = -(self.beta**red)*np.exp(-distances[i])
                 red += 1
             elif self.board[i]['type'] == 'neutral':
-                delta = -(self.gamma**neutral)*np.exp(-distances[i])
+                delta = -0.5*(self.gamma**neutral)*np.exp(-distances[i])
                 neutral += 1
             else:
-                delta = -self.phi*np.exp(-distances[i])
+                delta = -2*np.exp(-distances[i])
 
             score += delta
 
@@ -103,7 +100,7 @@ class Predictor:
         best_guess = ''
         best_distances = []
         best_score = -float('inf')
-        for guess in tqdm(self.valid_guesses):
+        for guess in self.valid_guesses:
             score, distances = self.guess_score(guess)
             if score > best_score:
                 best_guess = guess
@@ -132,11 +129,11 @@ class Predictor:
 
 # @ctimer
 def main():
-    url_to_vec_path = '../static/data/url_to_vec.npy'
-    pair_to_dist_path = '../static/data/pair_to_dist.npy'
+    url_to_vec_path = '../static/numpy/url_to_vec.npy'
+    pair_to_dist_path = '../static/numpy/pair_to_dist.npy'
     board = generate_board(url_to_vec_path)[:9]
     invalid_guesses = set([picture['url'] for picture in board])
-    predictor = Predictor(board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.1, beta=0.0, gamma=0.0, phi=0.0)
+    predictor = Predictor(board, url_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.6, beta=0.1, gamma=0.1)
     best_guess, best_distances, best_score = predictor.get_best_guess_and_scores()
 
     board_types = [b['type'] for b in board]
