@@ -57,6 +57,7 @@ class Predictor:
         return total/arr.shape[0]
 
     def earthmover(self, u, v):
+        print(u, v)
         dist_matrix = self.calculate_dist_matrix(u, v, self.pair_to_dist)
         assignment = solve_dense(dist_matrix)
         score = self.numba_mean(dist_matrix[assignment])
