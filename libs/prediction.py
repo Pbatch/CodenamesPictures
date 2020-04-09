@@ -1,7 +1,5 @@
 from utils import generate_board, ctimer
 import numpy as np
-from numba import njit
-from lapsolver import solve_dense
 import matplotlib.pyplot as plt
 from skimage.io import imread
 from tqdm import tqdm
@@ -11,16 +9,14 @@ class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, id_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
+    def __init__(self, board, ids_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
         """
         Parameters
         ----------
         board: json
             The current board state
-        id_to_vec_path: str
-            The path to the id_to_vec dictionary
-        pair_to_dist_path: str
-            The path to the pair_to_dist dictionary
+        ids_to_dist_path: str
+            The path to the ids_to_dist nd-array
         invalid_guesses: set
             Guesses which can't be used
         alpha: float
@@ -35,33 +31,8 @@ class Predictor:
         self.beta = beta
         self.gamma = gamma
 
-        self.id_to_vec = np.load(id_to_vec_path, allow_pickle=True).item()
-        self.pair_to_dist = np.load(pair_to_dist_path, allow_pickle=True)
-        self.valid_guesses = list(set(self.id_to_vec.keys()).difference(invalid_guesses))
-
-    @staticmethod
-    @njit(fastmath=True)
-    def calculate_dist_matrix(u, v, d):
-        mat = np.zeros(shape=(u.shape[0], v.shape[0]), dtype=np.float32)
-        for i in range(u.shape[0]):
-            for j in range(v.shape[0]):
-                mat[i][j] = d[u[i]][v[j]]
-        return mat
-
-    @staticmethod
-    @njit(fastmath=True)
-    def numba_mean(arr):
-        total = 0
-        for a in arr:
-            total += a
-        return total/arr.shape[0]
-
-    def earthmover(self, u, v):
-        print(u, v)
-        dist_matrix = self.calculate_dist_matrix(u, v, self.pair_to_dist)
-        assignment = solve_dense(dist_matrix)
-        score = self.numba_mean(dist_matrix[assignment])
-        return score
+        self.ids_to_dist = np.load(ids_to_dist_path, allow_pickle=True)
+        self.valid_guesses = list(set(range(self.ids_to_dist.shape[0])).difference(invalid_guesses))
 
     def guess_score(self, guess):
         """
@@ -69,11 +40,7 @@ class Predictor:
         """
         blue, red, neutral = 0, 0, 0
 
-        distances = []
-        u = self.id_to_vec[guess]
-        for picture in self.board:
-            v = self.id_to_vec[picture['pic_id']]
-            distances.append(self.earthmover(u, v))
+        distances = [self.ids_to_dist[guess][p['pic_id']] for p in self.board]
 
         sorted_idx = np.argsort(np.array(distances))
         score = 0
@@ -132,17 +99,17 @@ class Predictor:
 
 # @ctimer
 def main():
-    id_to_vec_path = '../static/numpy/id_to_vec.npy'
-    pair_to_dist_path = '../static/numpy/pair_to_dist.npy'
-    board = generate_board(id_to_vec_path)[:9]
+    n_ids = 3242
+    ids_to_dist_path = '../static/numpy/ids_to_dist.npy'
+    board = generate_board(n_ids)
     invalid_guesses = set([picture['pic_id'] for picture in board])
-    predictor = Predictor(board, id_to_vec_path, pair_to_dist_path, invalid_guesses, alpha=0.6, beta=0.1, gamma=0.1)
+    predictor = Predictor(board, ids_to_dist_path, invalid_guesses, alpha=0.9, beta=0.1, gamma=0.1)
     best_guess, best_distances, best_score = predictor.get_best_guess_and_scores()
 
     board_types = [b['type'] for b in board]
     for t, s in zip(board_types, best_distances):
         print(f'Type:{t} || Score:{s:.3f}')
-    predictor.display_board(best_guess, best_distances, shape=(3, 3))
+    predictor.display_board(best_guess, best_distances, shape=(5, 5))
 
 
 if __name__ == "__main__":

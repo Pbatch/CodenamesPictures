@@ -17,37 +17,32 @@ def ctimer(func):
     return wrapper
 
 
-def generate_board(path):
+def generate_board(n_ids):
     """
     Create a game board
     """
-    try:
-        d = np.load(path, allow_pickle=True).item()
-        all_pic_ids = list(d.keys())
-    except FileNotFoundError:
-        raise Exception("Make sure that the path exists")
-
-    permutation = np.random.permutation(len(all_pic_ids))
-    pic_ids = np.array(all_pic_ids)[permutation][:25]
+    # Select 25 random pic_ids
+    pic_ids = np.random.permutation(n_ids)[:25]
 
     # 9 Blue, 8 Red, 7 Neutral, 1 Assassin
     board = []
-    for i, pic_id in enumerate(pic_ids):
+    for i in range(25):
         if i < 9:
-            type = "blue"
+            _type = "blue"
             colour = "#0080FF"
         elif i < 17:
-            type = "red"
+            _type = "red"
             colour = "#FF0000"
         elif i < 24:
-            type = "neutral"
+            _type = "neutral"
             colour = "#D0D0D0"
         else:
-            type = "assassin"
+            _type = "assassin"
             colour = "#202020"
-        picture = {"pic_id": int(pic_id), "type": type, "active": False, "colour": colour}
+        picture = {"pic_id": int(pic_ids[i]), "type": _type, "active": False, "colour": colour}
         board.append(picture)
 
+    # Stop colours being adjacent by default
     np.random.shuffle(board)
 
     # Assign ids (+1 because of the header)
@@ -58,6 +53,6 @@ def generate_board(path):
 
 
 if __name__ == "__main__":
-    path = '../static/numpy/id_to_vec.npy'
-    board = generate_board(path)
+    n_ids = 3242
+    board = generate_board(n_ids)
     print(board)
