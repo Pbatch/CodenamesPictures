@@ -53,7 +53,7 @@ def clue():
     ids_to_dist_path = 'static/numpy/ids_to_dist.npy'
     invalid_guesses = set(board[0]['invalid_guesses'])
 
-    predictor = Predictor(board[1:], ids_to_dist_path, invalid_guesses, alpha=0.7, beta=0.1, gamma=0.1)
+    predictor = Predictor(board[1:], ids_to_dist_path, invalid_guesses, alpha=0.8, beta=0.1, gamma=0.1)
     clue, _, _ = predictor.get_best_guess_and_scores()
     clue_details = jsonify(clue=clue)
 

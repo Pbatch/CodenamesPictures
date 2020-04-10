@@ -1,8 +1,7 @@
-from utils import generate_board, ctimer
+from utils import generate_board
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage.io import imread
-from tqdm import tqdm
 
 
 class Predictor:
@@ -97,7 +96,6 @@ class Predictor:
         plt.show()
 
 
-# @ctimer
 def main():
     n_ids = 3242
     ids_to_dist_path = '../static/numpy/ids_to_dist.npy'

@@ -1,5 +1,4 @@
 import numpy as np
-from copy import deepcopy
 
 
 class Computer:
@@ -14,37 +13,25 @@ class Computer:
             The current board state
         """
         self.board = board
-        self.distribution = self.get_distribution()
+        self.distribution = {"blue": 1, "red": 6, "neutral": 1, "none": 1}
         self.blue, self.red, self.neutral = self.get_types()
 
     def get_types(self):
         """
-        Extract the types from the cards
+        Extract the types from the pictures
         """
         blue = []
         red = []
         neutral = []
-        for card in self.board[1:]:
-            card_id = card["id"]
-            if card["type"] == "blue" and not card["active"]:
-                blue.append(card_id)
-            if card["type"] == "red" and not card["active"]:
-                red.append(card_id)
-            if card["type"] == "neutral" and not card["active"]:
-                neutral.append(card_id)
+        for pic in self.board[1:]:
+            pic_id = pic["id"]
+            if pic["type"] == "blue" and not pic["active"]:
+                blue.append(pic_id)
+            if pic["type"] == "red" and not pic["active"]:
+                red.append(pic_id)
+            if pic["type"] == "neutral" and not pic["active"]:
+                neutral.append(pic_id)
         return blue, red, neutral
-
-    def get_distribution(self):
-        """
-        Get the distribution over the classes depending on the difficulty
-        """
-        if self.board[0]["difficulty"] == "easy":
-            distribution = {"blue": 1, "red": 2, "neutral": 1, "none": 3}
-        elif self.board[0]["difficulty"] == "medium":
-            distribution = {"blue": 1, "red": 2, "neutral": 1, "none": 2}
-        else:
-            distribution = {"blue": 0, "red": 3, "neutral": 1, "none": 2}
-        return distribution
 
     def generate_computer_sequence(self):
         """
@@ -52,9 +39,9 @@ class Computer:
         """
 
         sequence = []
-        card_type = None
+        pic_type = None
         decay = 1
-        while card_type not in {"blue", "neutral"}:
+        while pic_type not in {"blue", "neutral"}:
             if len(self.blue) + len(self.red) + len(self.neutral) == 0:
                 break
             weights = [self.distribution["red"]*decay if len(self.red) > 0 else 0,
@@ -63,60 +50,31 @@ class Computer:
                        self.distribution["none"] if len(sequence) != 0 else 0]
             weights = np.array(weights) / sum(weights)
 
-            card_type = np.random.choice(["red", "blue", "neutral", "none"], p=weights)
+            pic_type = np.random.choice(["red", "blue", "neutral", "none"], p=weights)
 
-            if card_type == "red":
-                card_id = np.random.choice(self.red)
-                self.red.remove(card_id)
+            if pic_type == "red":
+                pic_id = np.random.choice(self.red)
+                self.red.remove(pic_id)
 
-            elif card_type == "blue":
-                card_id = np.random.choice(self.blue)
-                self.blue.remove(card_id)
+            elif pic_type == "blue":
+                pic_id = np.random.choice(self.blue)
+                self.blue.remove(pic_id)
 
-            elif card_type == "neutral":
-                card_id = np.random.choice(self.neutral)
-                self.neutral.remove(card_id)
+            elif pic_type == "neutral":
+                pic_id = np.random.choice(self.neutral)
+                self.neutral.remove(pic_id)
 
             else:
                 break
 
-            sequence.append(int(card_id))
-            decay *= 0.35
+            print(pic_type)
+
+            sequence.append(int(pic_id))
+            decay *= 0.25
 
         return sequence
 
 
-def main():
-    import boardgen
-    while True:
-        board = boardgen.Boardgen("../static/data/codenames_words").board
-        red = 8
-        blue = 9
-        neutral = 7
-        for i in range(20):
-            if board[i]["type"] not in {"assassin", "red"}:
-                board[i]["active"] = True
-            if board[i]["type"] == blue:
-                blue -= 1
-            elif board[i]["type"] == red:
-                red -= 1
-            elif board[i]["type"] == neutral:
-                neutral -= 1
-        board.insert(0, {"clue": "",
-                         "target": 0,
-                         "red_remaining": red,
-                         "blue_remaining": blue,
-                         "neutral_remaining": neutral,
-                         "difficulty": "easy",
-                         "computer_turn": True
-                         })
-        sequence = Computer(board).generate_computer_sequence()
-        if "assassin" in sequence:
-            print(sequence)
-            break
-        print(", ".join([board[i]["type"] for i in sequence]))
-
-
 if __name__ == "__main__":
-    main()
+    print('Insert testing here')
 
