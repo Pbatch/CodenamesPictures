@@ -50,13 +50,12 @@ def clue():
     Generate a clue
     """
     board = json.loads(request.data)
-    ids_to_dist_path = 'static/numpy/ids_to_dist.npy'
+    ids_to_score_path = 'static/numpy/ids_to_score.npy'
     invalid_guesses = set(board[0]['invalid_guesses'])
 
-    predictor = Predictor(board[1:], ids_to_dist_path, invalid_guesses, alpha=0.6, beta=0.1, gamma=0.1)
+    predictor = Predictor(board[1:], ids_to_score_path, invalid_guesses, alpha=0.6, beta=0.1, gamma=0.1)
     clue, scores = predictor.get_best_guess_and_scores()
-    scaled_scores = [int(100*s) for s in scores]
-    print(sum(scores))
+    scaled_scores = [round(s) for s in scores]
     clue_details = jsonify(clue=clue, scores=scaled_scores)
 
     return clue_details

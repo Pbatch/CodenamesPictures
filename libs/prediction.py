@@ -8,14 +8,14 @@ class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, ids_to_dist_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
+    def __init__(self, board, ids_to_score_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
         """
         Parameters
         ----------
         board: json
             The current board state
-        ids_to_dist_path: str
-            The path to the ids_to_dist nd-array
+        ids_to_score_path: str
+            The path to the ids_to_score nd-array
         invalid_guesses: set
             Guesses which can't be used
         alpha: float
@@ -30,30 +30,29 @@ class Predictor:
         self.beta = beta
         self.gamma = gamma
 
-        self.ids_to_dist = np.load(ids_to_dist_path, allow_pickle=True)
-        self.valid_guesses = list(set(range(self.ids_to_dist.shape[0])).difference(invalid_guesses))
+        self.ids_to_score = np.load(ids_to_score_path, allow_pickle=True)
+        self.valid_guesses = list(set(range(self.ids_to_score.shape[0])).difference(invalid_guesses))
 
     def guess_scores(self, guess):
         """
         Generate the scores for a guess
         """
         blue, red, neutral = 0, 0, 0
-        scores = [0 for _ in range(len(self.board))]
 
-        distances = [self.ids_to_dist[guess][p['pic_id']] for p in self.board]
-        sorted_idx = np.argsort(np.array(distances))
+        scores = [self.ids_to_score[guess][p['pic_id']] for p in self.board]
+        sorted_idx = np.argsort(-np.array(scores))
         for i in sorted_idx:
             if self.board[i]['type'] == 'blue':
-                scores[i] = (self.alpha**blue)*np.exp(-distances[i])
+                scores[i] *= (self.alpha**blue)
                 blue += 1
             elif self.board[i]['type'] == 'red':
-                scores[i] = -(self.beta**red)*np.exp(-distances[i])
+                scores[i] *= -(self.beta**red)
                 red += 1
             elif self.board[i]['type'] == 'neutral':
-                scores[i] = -(self.gamma**neutral)*np.exp(-distances[i])
+                scores[i] *= -(self.gamma**neutral)
                 neutral += 1
             else:
-                scores[i] = -np.exp(-distances[i])
+                scores[i] *= -1
 
         return scores
 
@@ -96,17 +95,17 @@ class Predictor:
 
 def main():
     n_ids = 3242
-    ids_to_dist_path = '../static/numpy/ids_to_dist.npy'
+    ids_to_score_path = '../static/numpy/ids_to_score.npy'
     board = generate_board(n_ids)
     invalid_guesses = set([picture['pic_id'] for picture in board])
-    predictor = Predictor(board, ids_to_dist_path, invalid_guesses, alpha=0.9, beta=0.1, gamma=0.1)
+    predictor = Predictor(board, ids_to_score_path, invalid_guesses, alpha=0.9, beta=0.1, gamma=0.1)
     best_guess, best_scores = predictor.get_best_guess_and_scores()
 
-    scaled_scores = [int(100*s) for s in best_scores]
+    round_scores = [round(s) for s in best_scores]
     board_types = [b['type'] for b in board]
-    for t, s in zip(board_types, scaled_scores):
+    for t, s in zip(board_types, round_scores):
         print(f'Type:{t} || Score:{s}')
-    predictor.display_board(best_guess, scaled_scores, shape=(5, 5))
+    predictor.display_board(best_guess, round_scores, shape=(5, 5))
 
 
 if __name__ == "__main__":
