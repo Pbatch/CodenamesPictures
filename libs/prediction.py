@@ -51,7 +51,7 @@ class Predictor:
                 delta = -(self.beta**red)*np.exp(-distances[i])
                 red += 1
             elif self.board[i]['type'] == 'neutral':
-                delta = -0.5*(self.gamma**neutral)*np.exp(-distances[i])
+                delta = -(self.gamma**neutral)*np.exp(-distances[i])
                 neutral += 1
             else:
                 delta = -2*np.exp(-distances[i])

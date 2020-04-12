@@ -55,28 +55,33 @@ $(document).ready(function(){
     }
   }
 
-  //Reveal the types of all the pictures
-  function reveal_all_pictures() {
-    for (i = 1; i < 26; i++) {
-        update_picture(i);
-    }
-  }
-
   //Check if the game has ended
   function check_end() {
+    var end = false;
     if (blue_remaining == 0) {
-      $("#clue").html('You win!')
-      reveal_all_pictures();
-      return true;
+      var final_text = 'You win!'
+      end = true;
     }
-    //The computer never chooses the assassin so no assassin guarantees a loss
     else if (red_remaining == 0 || assassin_remaining == 0) {
-      $("#clue").html('You lose...');
-      reveal_all_pictures();
-      return true;
+      var final_text = 'You lose...';
+      end = true;
     }
-    return false;
-  }
+
+    if (end == true) {
+      //Change the clue text
+      $('#clue').html(final_text);
+      //Stop picture and end turn clicks
+      $('.picture').css('pointer-events', 'none');
+      $('#end_turn').css('pointer-events', 'none');
+      //Show all the remaining pictures
+      for (i = 1; i < 26; i++) {
+        update_picture(i);
+      }
+    }
+
+    return end;
+   }
+
 
   //Computer turn
   function computer_turn() {
@@ -101,7 +106,9 @@ $(document).ready(function(){
             }
          }
          //Generate a new clue
-         generate_clue();
+         if (check_end() == false) {
+            generate_clue();
+         }
        }
     });
   }
@@ -124,9 +131,6 @@ $(document).ready(function(){
 
   //Picture behaviour
   $('.picture').click(function() {
-    // Prevent pictures from being clicked
-    $('.picture').attr('disabled', true);
-
      //Get the id of the picture
      var id = $(this).attr('id');
 
@@ -136,13 +140,10 @@ $(document).ready(function(){
     //Check if the game has ended
     check_end();
 
-    // It's the computers turn if we don't choose a blue card
+    //If we don't choose a blue picture, it's the computer's turn
     if (board[id].type != "blue") {
       computer_turn();
     }
-
-    // Enable pictures to be clicked
-    $('.picture').attr('disabled', false);
   });
 
   //Reset button behaviour

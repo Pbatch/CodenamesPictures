@@ -67,8 +67,6 @@ class Computer:
             else:
                 break
 
-            print(pic_type)
-
             sequence.append(int(pic_id))
             decay *= 0.25
 
