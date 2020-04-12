@@ -57,17 +57,17 @@ body {
   cursor: pointer;
 }
 
-.wrapper {
+.board {
   display: grid;
   grid-template-columns: repeat(var(--split), 1fr);
   background-color: #fff;
   color: #444;
   text-align: center;
-  row-gap: 10px;
+  row-gap: 5px;
   column-gap: 0px;
 }
 
-.left-container {
+.left_container {
   display: grid;
   grid-template-rows: 100px 200px 50px 50px 50px;
 }
@@ -88,7 +88,7 @@ body {
 }
 
 #application {
-  padding-top: 45px;
+  padding-top: 20px;
 }
 
 #clue {
@@ -100,4 +100,8 @@ body {
     font-family: Courier New, monospace;
     font-weight: bold;
     letter-spacing: .1em;
+}
+
+.score{
+  font-family: arial;
 }

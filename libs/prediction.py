@@ -33,50 +33,48 @@ class Predictor:
         self.ids_to_dist = np.load(ids_to_dist_path, allow_pickle=True)
         self.valid_guesses = list(set(range(self.ids_to_dist.shape[0])).difference(invalid_guesses))
 
-    def guess_score(self, guess):
+    def guess_scores(self, guess):
         """
-        Generate a score for a guess
+        Generate the scores for a guess
         """
         blue, red, neutral = 0, 0, 0
+        scores = [0 for _ in range(len(self.board))]
 
         distances = [self.ids_to_dist[guess][p['pic_id']] for p in self.board]
-
         sorted_idx = np.argsort(np.array(distances))
-        score = 0
         for i in sorted_idx:
             if self.board[i]['type'] == 'blue':
-                delta = (self.alpha**blue)*np.exp(-distances[i])
+                scores[i] = (self.alpha**blue)*np.exp(-distances[i])
                 blue += 1
             elif self.board[i]['type'] == 'red':
-                delta = -(self.beta**red)*np.exp(-distances[i])
+                scores[i] = -(self.beta**red)*np.exp(-distances[i])
                 red += 1
             elif self.board[i]['type'] == 'neutral':
-                delta = -(self.gamma**neutral)*np.exp(-distances[i])
+                scores[i] = -(self.gamma**neutral)*np.exp(-distances[i])
                 neutral += 1
             else:
-                delta = -2*np.exp(-distances[i])
+                scores[i] = -np.exp(-distances[i])
 
-            score += delta
-
-        return score, distances
+        return scores
 
     def get_best_guess_and_scores(self):
         """
         Get the best guess and its scores
         """
         best_guess = ''
-        best_distances = []
-        best_score = -float('inf')
+        best_scores = []
+        best_total_score = -float('inf')
         for guess in self.valid_guesses:
-            score, distances = self.guess_score(guess)
-            if score > best_score:
+            scores = self.guess_scores(guess)
+            total_score = sum(scores)
+            if total_score > best_total_score:
                 best_guess = guess
-                best_distances = distances
-                best_score = score
+                best_scores = scores
+                best_total_score = total_score
 
-        return best_guess, best_distances, best_score
+        return best_guess, best_scores
 
-    def display_board(self, best_guess, best_distances, shape=(5, 5)):
+    def display_board(self, best_guess, best_scores, shape=(5, 5)):
         pic_ids = [picture['pic_id'] for picture in self.board] + [best_guess]
         fig, ax = plt.subplots(shape[0] + 1, shape[1], figsize=(24, 24))
         for i in range(shape[0] + 1):
@@ -85,7 +83,7 @@ class Predictor:
                     idx = shape[0]*i + j
                     path = f'../static/pictures/{pic_ids[idx]}.jpg'
                     image = imread(path)
-                    ax[i][j].set_title(f'Distance:{best_distances[idx]:.3f}', size=8)
+                    ax[i][j].set_title(best_scores[idx], size=8)
                     ax[i][j].imshow(image)
                 elif j == shape[1]//2:
                     path = f'../static/pictures/{best_guess}.jpg'
@@ -102,12 +100,13 @@ def main():
     board = generate_board(n_ids)
     invalid_guesses = set([picture['pic_id'] for picture in board])
     predictor = Predictor(board, ids_to_dist_path, invalid_guesses, alpha=0.9, beta=0.1, gamma=0.1)
-    best_guess, best_distances, best_score = predictor.get_best_guess_and_scores()
+    best_guess, best_scores = predictor.get_best_guess_and_scores()
 
+    scaled_scores = [int(100*s) for s in best_scores]
     board_types = [b['type'] for b in board]
-    for t, s in zip(board_types, best_distances):
-        print(f'Type:{t} || Score:{s:.3f}')
-    predictor.display_board(best_guess, best_distances, shape=(5, 5))
+    for t, s in zip(board_types, scaled_scores):
+        print(f'Type:{t} || Score:{s}')
+    predictor.display_board(best_guess, scaled_scores, shape=(5, 5))
 
 
 if __name__ == "__main__":

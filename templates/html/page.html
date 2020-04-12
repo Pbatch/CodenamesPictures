@@ -10,7 +10,7 @@
    <body>
       <div id="application">
          <div id="left">
-            <div class="left-container">
+            <div class="left_container">
                <div id="title">
                   Codenames <br> Pictures
                </div>
@@ -26,15 +26,23 @@
                   <div class="symbol_button_text">End Turn</div>
                </div>
                <div class="symbol_button" id="reset">
-                  <div class="symbol_button_text">Reset &#8634;</div>
+                  <div class="symbol_button_text">
+                     Reset &#8634;
+                  </div>
                </div>
             </div>
          </div>
          <div id="right">
-            <div class="wrapper" style="--split: 5;">
+            <div class="board" style="--split: 5;">
                {% for picture in board[1:] %}
-                  <div id="frame{{picture.id}}" class="frame">
-                     <img src="static/pictures/{{picture.pic_id}}.jpg" id="{{picture.id}}" class="picture">
+                  <div>
+                     <div id="frame{{picture.id}}" class="frame">
+                        <img src="static/pictures/{{picture.pic_id}}.jpg" id="{{picture.id}}" class="picture">
+                     </div>
+                     <div id="score{{picture.id}}" class="score">
+                        <!-- The score from the clue to the picture goes here -->
+                        &nbsp
+                     </div>
                   </div>
                {% endfor %}
             </div>

@@ -11,6 +11,14 @@ $(document).ready(function(){
       success: function(clue_details){
           var clue_details = JSON.parse(clue_details);
           var clue = clue_details.clue;
+          var scores = clue_details.scores;
+
+          //Update the scores
+          for (i = 1; i < 26; i++) {
+            if (board[i].active == false) {
+                $("#score"+i).html(scores.shift());
+            }
+          }
 
           //Add the clue to the list of invalid guesses
           board[0]["invalid_guesses"].push(clue);
@@ -32,13 +40,18 @@ $(document).ready(function(){
     //Set the picture to active
     board[id].active = true;
 
+    //Get rid of the distance text
+    $("#score"+id).html('&nbsp')
+
     //Change the class of the picture
     $("#"+id).attr('class', 'active_picture');
 
     //Change the css of the frame
     $("#frame"+id).css({
     "border-style": "solid",
-    "border-color": board[id].colour
+    "border-color": board[id].colour,
+    "height": $("#"+id).height(),
+    "width": $("#"+id).width()
     });
 
     //Decrement the appropriate count
@@ -57,7 +70,9 @@ $(document).ready(function(){
 
   //Check if the game has ended
   function check_end() {
-    var end = false;
+    if (end == true) {
+        return;
+    }
     if (blue_remaining == 0) {
       var final_text = 'You win!'
       end = true;
@@ -95,8 +110,6 @@ $(document).ready(function(){
        success: async function(sequence){
          var sequence = JSON.parse(sequence).sequence;
 
-         console.log(sequence);
-
          //Apply the sequence
          var sequence_length = sequence.length;
          for (i = 0; i < sequence_length; i++) {
@@ -123,6 +136,7 @@ $(document).ready(function(){
   var red_remaining = 8;
   var neutral_remaining = 7;
   var assassin_remaining = 1;
+  var end = false;
   generate_clue();
 
   /*
