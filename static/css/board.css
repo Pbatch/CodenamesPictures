@@ -5,8 +5,9 @@
 }
 
 #right {
-  width: 80%;
-  float: right;
+  padding-top: 10px;
+  width: 75%;
+  float: left;
 }
 
 body {

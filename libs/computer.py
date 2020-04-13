@@ -58,7 +58,6 @@ class Computer:
                        self.params["blue"] if len(self.blue) > 0 else 0,
                        self.params["neutral"] if len(self.neutral) > 0 else 0,
                        self.params["none"] if len(sequence) != 0 else 0]
-            print(weights)
             weights = np.array(weights) / sum(weights)
 
             pic_type = np.random.choice(["red", "blue", "neutral", "none"], p=weights)
