@@ -19,6 +19,9 @@ def index():
     invalid_guesses = [picture['pic_id'] for picture in board]
     board.insert(0, {"difficulty": "easy",
                      "invalid_guesses": invalid_guesses,
+                     'blue': 1.0,
+                     'red': 1.0,
+                     'neutral': 1.0
                      })
     return render_template('html/page.html', board=board)
 
@@ -53,7 +56,13 @@ def clue():
     ids_to_score_path = 'static/numpy/ids_to_score.npy'
     invalid_guesses = set(board[0]['invalid_guesses'])
 
-    predictor = Predictor(board[1:], ids_to_score_path, invalid_guesses, alpha=0.6, beta=0.1, gamma=0.1)
+    score_params = {'blue': board[0]['blue'],
+                    'red': board[0]['red'],
+                    'neutral': board[0]['neutral'],
+                    'assassin': 1,
+                    'decay': 0.7}
+
+    predictor = Predictor(board[1:], ids_to_score_path, invalid_guesses, score_params)
     clue, scores = predictor.get_best_guess_and_scores()
     scaled_scores = [round(s) for s in scores]
     clue_details = jsonify(clue=clue, scores=scaled_scores)

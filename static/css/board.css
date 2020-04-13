@@ -1,11 +1,7 @@
 #left {
   width: 20%;
   float: left;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
   text-align: center;
-  font-size: 2em;
-  height: 90px;
 }
 
 #right {
@@ -19,6 +15,9 @@ body {
     -moz-user-select: none;
     -o-user-select: none;
     user-select: none;
+    background: #323032;
+    color: white;
+    font-family: Courier New;
 }
 
 .picture {
@@ -47,8 +46,8 @@ body {
 
 .remaining_text {
     font-weight: bold;
-    font-family: Courier New;
     color: var(--colour);
+    font-size: 1.5em;
 }
 
 .picture:hover {
@@ -60,26 +59,24 @@ body {
 .board {
   display: grid;
   grid-template-columns: repeat(var(--split), 1fr);
-  background-color: #fff;
-  color: #444;
   text-align: center;
   row-gap: 5px;
-  column-gap: 0px;
 }
 
 .left_container {
   display: grid;
-  grid-template-rows: 100px 200px 50px 50px 50px;
+  grid-template-rows: 90px 180px 35px 50px 50px 50px 50px 50px 10px;
 }
 
 .symbol_button{
-    padding: 0 1.5em;
+    padding: 0 1.0em;
 }
 
 .symbol_button_text{
-    font-family: arial;
     border-radius: 5px;
     background-color: #F0F0F0;
+    color: #323032;
+    font-size: 1.5em;
 }
 
 .symbol_button_text:hover {
@@ -100,8 +97,36 @@ body {
     font-family: Courier New, monospace;
     font-weight: bold;
     letter-spacing: .1em;
+    font-size: 2em;
 }
 
-.score{
-  font-family: arial;
+.score {
+  font-family: Courier New;
+  color: #323032;
+}
+
+.slider {
+  -webkit-appearance: none;
+  height: 15px;
+  border-radius: 5px;
+  outline: none;
+  background: #D0D0D0;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--colour);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--colour);
+  cursor: pointer;
 }

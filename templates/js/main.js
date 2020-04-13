@@ -2,6 +2,11 @@ $(document).ready(function(){
 
   //Generate a clue
   function generate_clue() {
+    //Update the board parameters to the slider values
+    board[0]['blue'] = parseFloat(document.getElementById("blue_slider").value) / 100;
+    board[0]['red'] = parseFloat(document.getElementById("red_slider").value) / 100;
+    board[0]['neutral'] = parseFloat(document.getElementById("neutral_slider").value) / 100;
+
     $.ajax({
       type:'POST',
       url: "{{ url_for('clue')}}",
@@ -177,4 +182,19 @@ $(document).ready(function(){
     computer_turn();
   })
 
+  //Cheat button behaviour
+  $("#cheat").click(function(){
+    var current_color = $('.score').css('color');
+    if (current_color == 'rgb(255, 255, 255)') {
+      //This gray is invisible
+      var new_color = '#323032';
+    }
+    else {
+      //White is visible
+      var new_color = 'white';
+    }
+    $('.score').css({
+      "color": new_color
+    });
+  });
 });

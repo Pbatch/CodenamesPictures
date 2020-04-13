@@ -5,7 +5,7 @@ class Computer:
     """
     Generate a random sequence of computer moves
     """
-    def __init__(self, board):
+    def __init__(self, board, params=None):
         """
         Parameters
         ----------
@@ -13,8 +13,18 @@ class Computer:
             The current board state
         """
         self.board = board
-        self.distribution = {"blue": 1, "red": 6, "neutral": 1, "none": 1}
+        self.params = self.set_params(params)
         self.blue, self.red, self.neutral = self.get_types()
+
+    @staticmethod
+    def set_params(params):
+        if params is None:
+            params = {"blue": 0, "red": 5, "neutral": 1, "none": 1, 'decay': 0.2}
+        else:
+            for key in ['blue', 'red', 'neutral', 'none', 'decay']:
+                if key not in params:
+                    raise ValueError(f'Params needs a value for key {key}')
+        return params
 
     def get_types(self):
         """
@@ -44,10 +54,11 @@ class Computer:
         while pic_type not in {"blue", "neutral"}:
             if len(self.blue) + len(self.red) + len(self.neutral) == 0:
                 break
-            weights = [self.distribution["red"]*decay if len(self.red) > 0 else 0,
-                       self.distribution["blue"] if len(self.blue) > 0 else 0,
-                       self.distribution["neutral"] if len(self.neutral) > 0 else 0,
-                       self.distribution["none"] if len(sequence) != 0 else 0]
+            weights = [self.params["red"]*decay if len(self.red) > 0 else 0,
+                       self.params["blue"] if len(self.blue) > 0 else 0,
+                       self.params["neutral"] if len(self.neutral) > 0 else 0,
+                       self.params["none"] if len(sequence) != 0 else 0]
+            print(weights)
             weights = np.array(weights) / sum(weights)
 
             pic_type = np.random.choice(["red", "blue", "neutral", "none"], p=weights)
@@ -68,7 +79,7 @@ class Computer:
                 break
 
             sequence.append(int(pic_id))
-            decay *= 0.25
+            decay *= self.params['decay']
 
         return sequence
 

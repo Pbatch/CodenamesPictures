@@ -35,7 +35,7 @@ def generate_board(n_ids):
             colour = "#FF0000"
         elif i < 24:
             _type = "neutral"
-            colour = "#D0D0D0"
+            colour = "#808080"
         else:
             _type = "assassin"
             colour = "#202020"

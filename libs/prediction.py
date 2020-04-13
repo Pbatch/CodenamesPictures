@@ -8,7 +8,7 @@ class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, ids_to_score_path, invalid_guesses, alpha=0.9, beta=0.8, gamma=0.8):
+    def __init__(self, board, ids_to_score_path, invalid_guesses, params=None):
         """
         Parameters
         ----------
@@ -18,20 +18,27 @@ class Predictor:
             The path to the ids_to_score nd-array
         invalid_guesses: set
             Guesses which can't be used
-        alpha: float
-            The decay factor for the blue team
-        beta: float
-            The decay factor for the red team
-        gamma: float
-            The decay factor for the neutral team
+        params: dict
+            The parameters for the score function
         """
         self.board = [p for p in board if not p['active']]
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-
+        self.params = self.set_params(params)
         self.ids_to_score = np.load(ids_to_score_path, allow_pickle=True)
         self.valid_guesses = list(set(range(self.ids_to_score.shape[0])).difference(invalid_guesses))
+
+    @staticmethod
+    def set_params(params):
+        if params is None:
+            params = {'blue': 1.0,
+                      'red': 1.0,
+                      'neutral': 1.0,
+                      'assassin': 1.0,
+                      'decay': 0.7}
+        else:
+            for key in ['blue', 'red', 'neutral', 'assassin', 'decay']:
+                if key not in params:
+                    raise ValueError(f'Score params needs a value for key {key}')
+        return params
 
     def guess_scores(self, guess):
         """
@@ -43,16 +50,16 @@ class Predictor:
         sorted_idx = np.argsort(-np.array(scores))
         for i in sorted_idx:
             if self.board[i]['type'] == 'blue':
-                scores[i] *= (self.alpha**blue)
+                scores[i] *= self.params['blue']*(self.params['decay']**blue)
                 blue += 1
             elif self.board[i]['type'] == 'red':
-                scores[i] *= -(self.beta**red)
+                scores[i] *= -self.params['red']*(self.params['decay']**red)
                 red += 1
             elif self.board[i]['type'] == 'neutral':
-                scores[i] *= -(self.gamma**neutral)
+                scores[i] *= -self.params['neutral']*(self.params['decay']**neutral)
                 neutral += 1
             else:
-                scores[i] *= -1
+                scores[i] *= -self.params['assassin']
 
         return scores
 
@@ -98,7 +105,7 @@ def main():
     ids_to_score_path = '../static/numpy/ids_to_score.npy'
     board = generate_board(n_ids)
     invalid_guesses = set([picture['pic_id'] for picture in board])
-    predictor = Predictor(board, ids_to_score_path, invalid_guesses, alpha=0.9, beta=0.1, gamma=0.1)
+    predictor = Predictor(board, ids_to_score_path, invalid_guesses)
     best_guess, best_scores = predictor.get_best_guess_and_scores()
 
     round_scores = [round(s) for s in best_scores]
