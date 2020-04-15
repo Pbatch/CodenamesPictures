@@ -1,6 +1,6 @@
 from utils import generate_board
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from skimage.io import imread
 
 
@@ -8,7 +8,7 @@ class Predictor:
     """
     Generate clues for the blue team
     """
-    def __init__(self, board, ids_to_score_path, invalid_guesses, params=None):
+    def __init__(self, board, ids_to_score_path, invalid_guesses, decay=0.8):
         """
         Parameters
         ----------
@@ -18,48 +18,27 @@ class Predictor:
             The path to the ids_to_score nd-array
         invalid_guesses: set
             Guesses which can't be used
-        params: dict
-            The parameters for the score function
+        decay: float
+            The decay for the score function
         """
         self.board = [p for p in board if not p['active']]
-        self.params = self.set_params(params)
         self.ids_to_score = np.load(ids_to_score_path, allow_pickle=True)
         self.valid_guesses = list(set(range(self.ids_to_score.shape[0])).difference(invalid_guesses))
-
-    @staticmethod
-    def set_params(params):
-        if params is None:
-            params = {'blue': 1.0,
-                      'red': 1.0,
-                      'neutral': 1.0,
-                      'assassin': 1.0,
-                      'decay': 0.7}
-        else:
-            for key in ['blue', 'red', 'neutral', 'assassin', 'decay']:
-                if key not in params:
-                    raise ValueError(f'Score params needs a value for key {key}')
-        return params
+        self.decay = decay
 
     def guess_scores(self, guess):
         """
         Generate the scores for a guess
         """
-        blue, red, neutral = 0, 0, 0
 
         scores = [self.ids_to_score[guess][p['pic_id']] for p in self.board]
         sorted_idx = np.argsort(-np.array(scores))
+        decay = 1
         for i in sorted_idx:
-            if self.board[i]['type'] == 'blue':
-                scores[i] *= self.params['blue']*(self.params['decay']**blue)
-                blue += 1
-            elif self.board[i]['type'] == 'red':
-                scores[i] *= -self.params['red']*(self.params['decay']**red)
-                red += 1
-            elif self.board[i]['type'] == 'neutral':
-                scores[i] *= -self.params['neutral']*(self.params['decay']**neutral)
-                neutral += 1
-            else:
-                scores[i] *= -self.params['assassin']
+            scores[i] *= decay
+            if self.board[i]['type'] != 'blue':
+                scores[i] *= -1
+            decay *= self.decay
 
         return scores
 

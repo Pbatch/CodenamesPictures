@@ -52,17 +52,13 @@ def clue():
     """
     Generate a clue
     """
-    board = json.loads(request.data)
+    data = json.loads(request.data)
+    board = data[1:]
     ids_to_score_path = 'static/numpy/ids_to_score.npy'
-    invalid_guesses = set(board[0]['invalid_guesses'])
+    invalid_guesses = set(data[0]['invalid_guesses'])
+    decay = data[0]['decay']
 
-    score_params = {'blue': board[0]['blue'],
-                    'red': board[0]['red'],
-                    'neutral': board[0]['neutral'],
-                    'assassin': 1,
-                    'decay': 0.7}
-
-    predictor = Predictor(board[1:], ids_to_score_path, invalid_guesses, score_params)
+    predictor = Predictor(board, ids_to_score_path, invalid_guesses, decay)
     clue, scores = predictor.get_best_guess_and_scores()
     scaled_scores = [round(s) for s in scores]
     clue_details = jsonify(clue=clue, scores=scaled_scores)

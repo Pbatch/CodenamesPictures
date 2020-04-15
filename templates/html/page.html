@@ -14,22 +14,17 @@
                <div id="title">
                   Codenames <br> Pictures
                </div>
-               <div id="clue">
-                  <!-- The picture for the clue loads here -->
-               </div>
                <div id="remaining">
                   <span class="remaining_text" id="blue" style="--colour:blue">9</span>
                   &nbsp;–&nbsp;
                   <span class="remaining_text" id="red" style="--colour:red">8</span>
                </div>
-               <div class="slider_container">
-                  <input type="range" min="0" max="100" value="100" class="slider" id="blue_slider" style="--colour:#0080FF">
+               <div id="clue">
+                  <!-- The picture for the clue loads here -->
                </div>
                <div class="slider_container">
-                  <input type="range" min="0" max="100" value="100" class="slider" id="red_slider" style="--colour:#FF0000">
-               </div>
-               <div class="slider_container">
-                  <input type="range" min="0" max="100" value="100" class="slider" id="neutral_slider" style="--colour:#808080">
+                  Decay
+                  <input type="range" min="10" max="90" value="50" class="slider" id="decay_slider" style="--colour:#808080">
                </div>
                <div class="symbol_button" id="end_turn">
                   <div class="symbol_button_text">End Turn</div>
@@ -41,7 +36,15 @@
                </div>
                <div class="symbol_button" id="cheat">
                    <div class="symbol_button_text">
-                     Cheat?
+                     Cheat
+                  </div>
+               </div>
+               <div class="symbol_button" id="instructions">
+                   <div class="symbol_button_text">
+                      Instructions &#63;
+                   </div>
+                  <div id="instructions_text">
+                     <!-- The instructions go here -->
                   </div>
                </div>
             </div>

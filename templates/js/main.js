@@ -3,9 +3,7 @@ $(document).ready(function(){
   //Generate a clue
   function generate_clue() {
     //Update the board parameters to the slider values
-    board[0]['blue'] = parseFloat(document.getElementById("blue_slider").value) / 100;
-    board[0]['red'] = parseFloat(document.getElementById("red_slider").value) / 100;
-    board[0]['neutral'] = parseFloat(document.getElementById("neutral_slider").value) / 100;
+    board[0]['decay'] = parseFloat(document.getElementById("decay_slider").value) / 100;
 
     $.ajax({
       type:'POST',
@@ -135,6 +133,7 @@ $(document).ready(function(){
   Setup
   */
 
+  //Define the relevant variables
   var board = {{board|tojson|safe}};
   var remaining_guesses = 0;
   var blue_remaining = 9;
@@ -142,6 +141,19 @@ $(document).ready(function(){
   var neutral_remaining = 7;
   var assassin_remaining = 1;
   var end = false;
+
+  //Load the instructions
+  var opt = {
+    autoOpen: false,
+    resizable: true,
+    title: "Instructions",
+    text: $('#instructions_text').load("instructions"),
+    height: 600,
+    width: 900
+  };
+  var dialog = $("#instructions_text").dialog(opt);
+
+  //Generate a clue
   generate_clue();
 
   /*
@@ -197,4 +209,10 @@ $(document).ready(function(){
       "color": new_color
     });
   });
+
+  //Instruction button behaviour
+  $('#instructions').click(function() {
+    dialog.dialog("open");
+  });
+
 });
