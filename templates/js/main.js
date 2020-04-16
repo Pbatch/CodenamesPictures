@@ -110,8 +110,9 @@ $(document).ready(function(){
        contentType: "application/json; charset=utf-8",
        dataType: "html",
        data: JSON.stringify(board),
-       success: async function(sequence){
+       success: function(sequence){
          var sequence = JSON.parse(sequence).sequence;
+         alert(sequence);
 
          //Apply the sequence
          var sequence_length = sequence.length;
