@@ -112,7 +112,6 @@ $(document).ready(function(){
        data: JSON.stringify(board),
        success: function(sequence){
          var sequence = JSON.parse(sequence).sequence;
-         alert(sequence);
 
          //Apply the sequence
          var sequence_length = sequence.length;
